@@ -49,6 +49,12 @@ If you want the proxy itself to serve HTTPS, you can specify the target with the
 
 This will generate a self-signed certificate and use it, openssl must be in `PATH` for this to work.
 
+Optional Specify SSL Certificate Path
+
+    iisexpress-proxy https://localhost:51123 to https://*:3000 ssl/<name>.key ssl/<name>.cert
+
+This will use your specificed certificate rather then generating a temporary certificate.
+
 _If you're on Windows, the easiest way to get openssl is to use Git Bash that comes with it pre-installed._
 
 If you want to bind to a specific interface instead of all of them, use its IP in the target URL, e.g. `https://10.0.0.1:3000`. Note that the right-hand part cannot be a domain name.
