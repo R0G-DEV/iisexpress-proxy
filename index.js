@@ -3,13 +3,14 @@
 var os = require('os'),
     httpProxy = require('http-proxy'),
     pkg = require('./package'),
+    fs = require('fs'),
     { getTempSSLCert } = require('./generate-cert');
 
 var exit = function() {
   var bin = Object.keys(pkg.bin)[0];
   console.log('Usage:');
-  console.log('\t%s <SOURCE_TO_PROXY> to <PROXY_ENDPOINT>', bin);
-  console.log('\tBoth arguments can be port number, or address with port number with optional protocol');
+  console.log('\t%s <SOURCE_TO_PROXY> to <PROXY_ENDPOINT> <OPTIONAL_SSL_PATH_TO_KEY> <OPTIONAL_SSL_PATH_TO_CERT>', bin);
+  console.log('\n\tBoth arguments can be port number, or address with port number with optional protocol');
   console.log('\tIf no address is specified in SOURCE_TO_PROXY, it defaults to localhost.');
   console.log('\tIf no address is specified for PROXY_ENDPOINT or it\'s "*", it will listen on all network interfaces');
   console.log('\tIf you specify the address for PROXY_ENDPOINT (and not just port), it must be');
@@ -19,13 +20,14 @@ var exit = function() {
   console.log('\t%s 192.168.0.100:51123 to 10.0.0.1:3000', bin);
   console.log('\t%s [http(s)://]domain.com:80 to 3000', bin);
   console.log('\t%s [https://]ssl-domain.com:443 to [https://]192.168.1.1:3000', bin);
+  console.log('\t%s [https://]ssl-domain.com:443 to [https://]192.168.1.1:3000 ssl/<name>.key ssl/<name>.cert', bin);
   console.log();
   process.exit();
 };
 
 console.log('IIS Express Proxy %s', pkg.version);
 
-if (process.argv.length != 5 || process.argv[3].toLowerCase() !== 'to') {
+if ((process.argv.length <= 4 && process.argv.length >= 8) || process.argv.length == 6 || process.argv[3].toLowerCase() !== 'to') {
   exit();
 }
 
@@ -77,7 +79,18 @@ Object.keys(interfaces).forEach(function(name) {
 
 var ssl = undefined;
 if (target.protocol === 'https://') {
-  ssl = getTempSSLCert();
+  let keyPath = process.argv[5];
+  let certPath = process.argv[6];
+  if(keyPath && certPath) {
+    console.log('\tUsing User SSL Certificate')
+    ssl = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath),
+    };
+  } else {
+    console.log('\tGenerating Self Signed Certificate')
+    ssl = getTempSSLCert();
+  }
 }
 
 var proxy = new httpProxy.createProxyServer({
